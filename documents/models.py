@@ -10,13 +10,20 @@ class Document(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        # Generar QR basado en la URL del documento
-        qr = qrcode.make(f"http://127.0.0.1:8000/media/{self.file}")
+        # Si el documento no tiene ID, guárdalo primero para generarlo
+        if not self.pk:
+            super().save(*args, **kwargs)
+
+        # Generar la URL de validación basada en el ID del documento
+        qr_url = f"http://127.0.0.1:8000/api/documents/validate/{self.pk}/"
+
+        # Crear el código QR
+        qr = qrcode.make(qr_url)
         buffer = BytesIO()
         qr.save(buffer, format="PNG")
-        self.qr_code.save(f"{self.title}_qr.png", ContentFile(buffer.getvalue()), save=False)
-        
-        super().save(*args, **kwargs)
 
-    def __str__(self):
-        return self.title
+        # Guardar la imagen QR en el campo qr_code
+        self.qr_code.save(f"{self.pk}_qr.png", ContentFile(buffer.getvalue()), save=False)
+
+        # Guardar nuevamente el modelo con el QR generado
+        super().save(update_fields=['qr_code'])
