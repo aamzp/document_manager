@@ -13,3 +13,6 @@ db.sqlite3
 # Archivos estáticos generados
 staticfiles/
 media/
+
+# Claves privadas y públicas
+*.pem
