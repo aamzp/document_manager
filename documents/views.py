@@ -1,5 +1,8 @@
 from rest_framework import generics
 
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from .models import Document
 from .serializers import DocumentSerializer
 
@@ -47,3 +50,10 @@ def validate_document(request, document_id):
         "uploaded_at": document.uploaded_at,
         "signature_valid": signature_valid
     })
+
+# Vistas con autenticación
+class DocumentUploadView(generics.CreateAPIView):
+    queryset = Document.objects.all()
+    serializer_class = DocumentSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
