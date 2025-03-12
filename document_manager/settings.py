@@ -156,3 +156,7 @@ SIMPLE_JWT = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Configuración de modelo de usuario personalizado
+
+AUTH_USER_MODEL = 'documents.CustomUser'

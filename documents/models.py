@@ -1,15 +1,19 @@
+from django.contrib.auth.models import AbstractUser
+from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
+from django.db import models
+
+from io import BytesIO
+
 import qrcode
 import hashlib
 import qrcode
-
-from django.db import models
-from io import BytesIO
-from django.core.files.base import ContentFile
 
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 
+# Modelo para documentos
 
 class Document(models.Model):
     title = models.CharField(max_length=255)
@@ -44,3 +48,27 @@ class Document(models.Model):
         self.qr_code.save(f"{self.pk}_qr.png", ContentFile(buffer.getvalue()), save=False)
 
         super().save(update_fields=['qr_code', 'signature'])
+
+# Modelo de usuario personalizado
+
+class CustomUser(AbstractUser):
+    ROLE_CHOICES = [
+        ('admin', 'Administrador'),
+        ('editor', 'Editor'),
+        ('user', 'Usuario Normal'),
+    ]
+    
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
+
+# Modelo para registrar accesos
+
+User = get_user_model()
+
+class AccessLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    action = models.CharField(max_length=255)  # Tipo de acción (ej. "LOGIN", "VIEW_DOCUMENT", "UPLOAD_DOCUMENT")
+    timestamp = models.DateTimeField(auto_now_add=True)  # Fecha y hora del evento
+    ip_address = models.GenericIPAddressField(null=True, blank=True)  # IP del usuario
+
+    def __str__(self):
+        return f"{self.user.username} - {self.action} - {self.timestamp}"

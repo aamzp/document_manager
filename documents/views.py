@@ -2,9 +2,11 @@ from rest_framework import generics
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.decorators import api_view, permission_classes
 
-from .models import Document
-from .serializers import DocumentSerializer
+from .models import Document, CustomUser, AccessLog
+from .serializers import DocumentSerializer, UserSerializer, AccessLogSerializer
+from .permissions import IsEditorOrAdmin, IsAdminUser
 
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
@@ -15,11 +17,18 @@ from Crypto.PublicKey import RSA
 import binascii
 
 # Vista para subir documentos
-class DocumentUploadView(generics.CreateAPIView):
+
+class DocumentUploadView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsEditorOrAdmin]
 
 # Vista para validar documentos
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsEditorOrAdmin])  # Solo editores y administradores
+
 def validate_document(request, document_id):
     document = get_object_or_404(Document, id=document_id)
 
@@ -51,9 +60,45 @@ def validate_document(request, document_id):
         "signature_valid": signature_valid
     })
 
-# Vistas con autenticación
-class DocumentUploadView(generics.CreateAPIView):
+
+# Vista para gestión de usuarios
+
+class UserManagementView(generics.ListCreateAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+# Vista para crear, editar y eliminar usuarios
+
+class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+# Vista para registro de accesos
+
+class DocumentDetailView(generics.RetrieveAPIView):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsEditorOrAdmin]
+
+    def retrieve(self, request, *args, **kwargs):
+        document = self.get_object()
+
+        # Guardar en el historial de accesos
+        AccessLog.objects.create(
+            user=request.user,
+            action=f"VIEW_DOCUMENT {document.id}",
+            ip_address=request.META.get('REMOTE_ADDR', '0.0.0.0')
+        )
+
+        return super().retrieve(request, *args, **kwargs)
+
+# Vista para visualización de historial de accesos
+
+class AccessLogView(generics.ListAPIView):
+    queryset = AccessLog.objects.all().order_by('-timestamp')
+    serializer_class = AccessLogSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsAdminUser]
