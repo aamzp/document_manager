@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { Button } from "../components/ui/button";
 
@@ -9,7 +9,7 @@ interface Document {
     uploaded_at: string;
     qr_code_url?: string;
     signature?: string;
-    signature_valud: boolean;
+    signature_valid: boolean;
 }
 
 const DocumentList = () => {
