@@ -47,6 +47,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
 
+    # CORS
+
+    'corsheaders',
+
 ]
 
 MIDDLEWARE = [
@@ -57,6 +61,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'document_manager.urls'
@@ -160,3 +166,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Configuración de modelo de usuario personalizado
 
 AUTH_USER_MODEL = 'documents.CustomUser'
+
+# Configuración de CORS
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Puerto de Vite (React)
+]
+
+CORS_ALLOW_CREDENTIALS = True

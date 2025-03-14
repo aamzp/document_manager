@@ -1,6 +1,7 @@
 from rest_framework import generics
 
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.decorators import api_view, permission_classes
 
@@ -18,16 +19,46 @@ import binascii
 
 # Vista para subir documentos
 
-class DocumentUploadView(generics.RetrieveUpdateDestroyAPIView):
+class DocumentUploadView(generics.ListCreateAPIView):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsEditorOrAdmin]
 
+# Vista para visualizar documentos
+
+class DocumentListView(generics.ListAPIView):
+    queryset = Document.objects.all().order_by('-uploaded_at')  # Ordenado por fecha de subida
+    serializer_class = DocumentSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsEditorOrAdmin]  
+
+# Vistas para acciones específicas sobre un documento
+
+class DocumentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Document.objects.all()
+    serializer_class = DocumentSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsEditorOrAdmin]
+
+    def retrieve(self, request, *args, **kwargs):
+        document = self.get_object()
+
+        # Guardar historial de accesos
+        AccessLog.objects.create(
+            user=request.user,
+            document=document,
+            action="viewed"
+            # considera agregar más detalles relevantes si necesitas
+        )
+
+        serializer = self.get_serializer(document)
+        return Response(serializer.data)
+
 # Vista para validar documentos
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, IsEditorOrAdmin])  # Solo editores y administradores
+@permission_classes([AllowAny])  # Solo editores y administradores
 
 def validate_document(request, document_id):
     document = get_object_or_404(Document, id=document_id)
