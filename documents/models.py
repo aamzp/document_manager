@@ -41,7 +41,7 @@ class Document(models.Model):
         self.signature = signature.hex()
         
         # Generar la URL de validación para el QR
-        qr_url = f"http://127.0.0.1:8000/api/documents/validate/{self.pk}/"
+        qr_url = f"http://localhost:5173/validate/{self.pk}"
         qr = qrcode.make(qr_url)
         buffer = BytesIO()
         qr.save(buffer, format="PNG")
